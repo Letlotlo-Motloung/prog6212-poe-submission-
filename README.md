@@ -134,7 +134,7 @@ Participant	johan.vanwyk@gmail.com	Password123!
 Seed data includes six events (four upcoming, two completed), eleven categories, ten enrolments and five published results, so both interfaces are populated immediately.
 
 4. Project Structure
-text
+
 RaceDayPart3/
 ├── README.md
 └── src/
@@ -152,6 +152,7 @@ RaceDayPart3/
         ├── Services/           # ApiClient, FileUpload, SessionKeys
         ├── Views/              # Razor views for all three role experiences
         └── wwwroot/            # site.css, site.js, uploads/
+
 Key API endpoints used by the MVC app
 text
 POST   /api/auth/register
