@@ -1,0 +1,114 @@
+@using Microsoft.AspNetCore.Http
+@{
+    var token = Context.Session.GetString(SessionKeys.Token);
+    var isAuthed = !string.IsNullOrEmpty(token);
+    var role = Context.Session.GetString(SessionKeys.Role) ?? "";
+    var fullName = Context.Session.GetString(SessionKeys.FullName) ?? "Guest";
+    var email = Context.Session.GetString(SessionKeys.Email) ?? "";
+    var picture = Context.Session.GetString(SessionKeys.ProfilePicture);
+    var isOrganiser = role == "Organiser";
+    var isParticipant = role == "Participant";
+
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    string Active(string c, string? a = null) =>
+        string.Equals(controller, c, StringComparison.OrdinalIgnoreCase) &&
+        (a == null || string.Equals(action, a, StringComparison.OrdinalIgnoreCase)) ? "nav-link active" : "nav-link";
+
+    var initials = string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Take(2).Select(p => p[0])).ToUpperInvariant();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] &middot; RaceDay</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-inner">
+            <a class="brand" href="/">
+                <span class="brand-mark">🏁</span>
+                <span>RaceDay</span>
+            </a>
+
+            <div class="nav-links">
+                @if (isOrganiser)
+                {
+                    <a class="@Active("Organiser", "Dashboard")" href="/Organiser/Dashboard">Dashboard</a>
+                    <a class="@Active("Organiser", "Events")" href="/Organiser/Events">My Events</a>
+                }
+                else
+                {
+                    <a class="@Active("Home", "Index")" href="/Home/Index">Events</a>
+                    @if (isParticipant)
+                    {
+                        <a class="@Active("Participant", "MyEnrolments")" href="/Participant/MyEnrolments">My Enrolments</a>
+                        <a class="@Active("Participant", "MyResults")" href="/Participant/MyResults">My Results</a>
+                    }
+                }
+            </div>
+
+            <div class="nav-right">
+                @if (isAuthed)
+                {
+                    <a class="nav-user" href="/Profile/Index" style="color:#fff;text-decoration:none;">
+                        @if (!string.IsNullOrEmpty(picture))
+                        {
+                            <img class="avatar" src="@picture" alt="@fullName" />
+                        }
+                        else
+                        {
+                            <span class="avatar">@initials</span>
+                        }
+                        <span class="who">
+                            <b>@fullName</b>
+                            <span>@role</span>
+                        </span>
+                    </a>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="mb-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-light btn-sm">Log out</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="nav-link" href="/Account/Login">Log in</a>
+                    <a class="btn btn-primary btn-sm" href="/Account/Register">Create account</a>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success"><span>✓</span><span>@TempData["Success"]</span></div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error"><span>!</span><span>@TempData["Error"]</span></div>
+            }
+            @if (TempData["Info"] != null)
+            {
+                <div class="alert alert-info"><span>i</span><span>@TempData["Info"]</span></div>
+            }
+
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container foot-inner">
+            <span>&copy; @DateTime.Now.Year RaceDay &middot; PROG6212 Portfolio of Evidence</span>
+            <span>Powered by the RaceDay REST API</span>
+        </div>
+    </footer>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

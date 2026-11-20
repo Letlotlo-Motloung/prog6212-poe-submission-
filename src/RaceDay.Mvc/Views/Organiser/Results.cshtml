@@ -1,0 +1,140 @@
+@model List<EventEnrolmentDto>
+@{
+    var ev = ViewBag.Event as EventDetailsDto;
+    ViewData["Title"] = "Results — " + (ev?.EventName ?? "Event");
+    var withResults = Model.Count(m => m.HasResult);
+    var published = Model.Count(m => m.IsPublished);
+}
+
+<div class="page-head">
+    <div>
+        <div class="eyebrow">Organiser &middot; @(ev?.EventName)</div>
+        <h1 class="mb-0">Results entry</h1>
+        <p>Capture finish times and finishing positions, then publish the results to participants.</p>
+    </div>
+    <div class="inline">
+        <a class="btn btn-light" href="/Organiser/Enrolments/@(ev?.EventID)">Enrolments</a>
+        <a class="btn btn-ghost" href="/Organiser/Events">← Back to events</a>
+    </div>
+</div>
+
+<div class="grid grid-3 mb-3">
+    <div class="stat">
+        <div class="icon">🎽</div>
+        <div class="label">Confirmed entries</div>
+        <div class="value">@Model.Count(m => m.Status == "Confirmed")</div>
+        <div class="hint">Eligible for a result</div>
+    </div>
+    <div class="stat teal">
+        <div class="icon">⏱️</div>
+        <div class="label">Results captured</div>
+        <div class="value">@withResults</div>
+        <div class="hint">Finish times recorded</div>
+    </div>
+    <div class="stat amber">
+        <div class="icon">📣</div>
+        <div class="label">Published</div>
+        <div class="value">@published</div>
+        <div class="hint">Visible to participants</div>
+    </div>
+</div>
+
+@if (ViewBag.ApiError != null)
+{
+    <div class="alert alert-error"><span>!</span><span>@ViewBag.ApiError</span></div>
+}
+
+<div class="card card-pad mb-3">
+    <div class="inline" style="justify-content:space-between;">
+        <div>
+            <h3 class="mb-0">Publish results</h3>
+            <p class="muted mb-0" style="font-size:.86rem;">
+                Publishing makes every captured result visible on each participant's My Results page.
+            </p>
+        </div>
+        <form asp-action="PublishResults" method="post" class="mb-0" data-confirm="Publish all captured results for this event?">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="eventId" value="@ev?.EventID" />
+            <button type="submit" class="btn btn-teal">Publish all results</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card">
+        <div class="empty">
+            <div class="emoji">⏱️</div>
+            <h3>No participants to capture results for</h3>
+            <p>Once participants enrol in this event, they will appear here for results entry.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="stack">
+        @foreach (var m in Model.OrderBy(x => x.CategoryName).ThenBy(x => x.ParticipantName))
+        {
+            <div class="card card-pad">
+                <div class="inline" style="justify-content:space-between;align-items:flex-start;">
+                    <div>
+                        <h3 class="mb-0">@m.ParticipantName</h3>
+                        <div class="event-meta mb-0">
+                            <span>🎽 @m.CategoryName</span>
+                            <span>✉️ @m.Email</span>
+                            <span class="badge @(m.Status == "Confirmed" ? "badge-green" : "badge-rose")">@m.Status</span>
+                            @if (m.IsPublished)
+                            {
+                                <span class="badge badge-teal">Published</span>
+                            }
+                        </div>
+                    </div>
+                    @if (m.HasResult)
+                    {
+                        <span class="badge badge-brand">@m.FinishTime &middot; position @m.Position</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-amber">Awaiting result</span>
+                    }
+                </div>
+
+                <div class="divider"></div>
+
+                <form asp-action="SaveResult" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="EventID" value="@ev?.EventID" />
+                    <input type="hidden" name="EnrolmentID" value="@m.EnrolmentID" />
+                    @if (m.ResultID.HasValue)
+                    {
+                        <input type="hidden" name="ResultID" value="@m.ResultID" />
+                    }
+
+                    <div class="grid" style="grid-template-columns:1.2fr .8fr 1fr auto auto;gap:12px;align-items:end;">
+                        <div class="field" style="margin:0;">
+                            <label>Finish time (hh:mm:ss)</label>
+                            <input name="FinishTime" class="input" placeholder="01:42:30" value="@m.FinishTime" />
+                        </div>
+                        <div class="field" style="margin:0;">
+                            <label>Position</label>
+                            <input name="Position" class="input" type="number" min="1" value="@m.Position" placeholder="1" />
+                        </div>
+                        <div class="field" style="margin:0;">
+                            <label>Status</label>
+                            <select name="Status" class="select">
+                                <option value="Finished" selected="@(m.Status != "DNF" && m.Status != "DNS")">Finished</option>
+                                <option value="DNF">DNF</option>
+                                <option value="DNS">DNS</option>
+                            </select>
+                        </div>
+                        <label class="check" style="padding-bottom:11px;white-space:nowrap;">
+                            <input type="checkbox" name="IsPublished" value="true" checked="@m.IsPublished" />
+                            Publish
+                        </label>
+                        <button type="submit" class="btn btn-primary">Save result</button>
+                    </div>
+                </form>
+            </div>
+        }
+    </div>
+}

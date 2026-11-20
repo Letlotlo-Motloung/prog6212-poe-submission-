@@ -1,0 +1,75 @@
+@model RegisterDto
+@{
+    ViewData["Title"] = "Create account";
+}
+
+<div class="auth-wrap">
+    <aside class="auth-side">
+        <h2>Join the RaceDay community.</h2>
+        <p>Whether you organise events or chase personal bests, it all starts here.</p>
+        <ul>
+            <li><span>✓</span> Participants enrol in events and categories</li>
+            <li><span>✓</span> Organisers publish events and capture results</li>
+            <li><span>✓</span> Every result stored in one race history</li>
+        </ul>
+    </aside>
+
+    <section class="auth-form">
+        <h1>Create account</h1>
+        <p class="sub">Choose the role that matches how you will use RaceDay.</p>
+
+        <form asp-action="Register" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+            <div class="field">
+                <label asp-for="FullName">Full name</label>
+                <input asp-for="FullName" class="input" placeholder="e.g. Lindiwe Dlamini" />
+                <span asp-validation-for="FullName" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Email">Email address</label>
+                <input asp-for="Email" class="input" type="email" autocomplete="username" placeholder="you@example.com" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="PhoneNumber">Phone number <span class="muted">(optional)</span></label>
+                <input asp-for="PhoneNumber" class="input" type="tel" placeholder="082 000 0000" />
+                <span asp-validation-for="PhoneNumber" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Role">I am registering as</label>
+                <select asp-for="Role" class="select">
+                    <option value="Participant">Participant — enrol in events</option>
+                    <option value="Organiser">Organiser — create and manage events</option>
+                </select>
+                <span asp-validation-for="Role" class="field-error"></span>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" class="input" type="password" autocomplete="new-password" />
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="ConfirmPassword">Confirm password</label>
+                    <input asp-for="ConfirmPassword" class="input" type="password" autocomplete="new-password" />
+                    <span asp-validation-for="ConfirmPassword" class="field-error"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+
+        <p class="auth-switch">Already registered? <a asp-action="Login">Log in</a></p>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

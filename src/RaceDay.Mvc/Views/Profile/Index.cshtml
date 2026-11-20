@@ -1,0 +1,94 @@
+@model ProfileDto
+@{
+    ViewData["Title"] = "My profile";
+    var initials = string.Join("", Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => p[0])).ToUpperInvariant();
+    var password = ViewBag.Password as UpdatePasswordDto ?? new UpdatePasswordDto();
+}
+
+<div class="page-head">
+    <div>
+        <div class="eyebrow">Account</div>
+        <h1 class="mb-0">My profile</h1>
+        <p>Keep your personal information up to date and manage your profile picture.</p>
+    </div>
+    <span class="badge badge-brand">@Model.Role</span>
+</div>
+
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card card-pad">
+        <h2>Personal information</h2>
+        <p class="muted" style="font-size:.88rem;">This information is shown to organisers on the events you enter.</p>
+
+        <form asp-action="UpdateProfile" method="post" enctype="multipart/form-data" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="UserID" />
+            <input type="hidden" asp-for="Role" />
+            <input type="hidden" asp-for="ProfilePictureUrl" />
+
+            <div class="avatar-upload mb-3">
+                @if (!string.IsNullOrEmpty(Model.ProfilePictureUrl))
+                {
+                    <img id="avatarPreview" class="avatar avatar-lg" src="@Model.ProfilePictureUrl" alt="@Model.FullName" />
+                }
+                else
+                {
+                    <span id="avatarPreview" class="avatar avatar-lg">@initials</span>
+                }
+                <div>
+                    <label class="btn btn-light btn-sm" for="profilePicture" style="cursor:pointer;">Upload photo</label>
+                    <input id="profilePicture" name="profilePicture" type="file" accept="image/*" class="file-input mt-1"
+                           data-preview="#avatarPreview" style="display:block;" />
+                    <div class="hint">JPG, PNG, GIF or WEBP. Maximum 5 MB.</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label asp-for="FullName">Full name</label>
+                <input asp-for="FullName" class="input" />
+                <span asp-validation-for="FullName" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label>Email address</label>
+                <input class="input" value="@Model.Email" disabled />
+                <div class="hint">Your email is used to log in and cannot be changed here.</div>
+            </div>
+
+            <div class="field">
+                <label asp-for="PhoneNumber">Phone number</label>
+                <input asp-for="PhoneNumber" class="input" type="tel" />
+                <span asp-validation-for="PhoneNumber" class="field-error"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save changes</button>
+        </form>
+    </div>
+
+    <div class="stack">
+        <div class="card card-pad">
+            <h2>Account</h2>
+            <div class="info-list">
+                <div class="row"><span>Role</span><span>@Model.Role</span></div>
+                <div class="row"><span>Email</span><span>@Model.Email</span></div>
+                <div class="row"><span>Member since</span><span>@Model.CreatedAt.ToString("dd MMM yyyy")</span></div>
+            </div>
+        </div>
+
+        <div class="card card-pad">
+            <h2>Change password</h2>
+            <form asp-action="ChangePassword" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="field">
+                    <label asp-for="@password.CurrentPassword">Current password</label>
+                    <input name="CurrentPassword" type="password" class="input" autocomplete="current-password" />
+                </div>
+                <div class="field">
+                    <label asp-for="@password.NewPassword">New password</label>
+                    <input name="NewPassword" type="password" class="input" autocomplete="new-password" />
+                    <div class="hint">At least 6 characters.</div>
+                </div>
+                <button type="submit" class="btn btn-dark">Update password</button>
+            </form>
+        </div>
+    </div>
+</div>
