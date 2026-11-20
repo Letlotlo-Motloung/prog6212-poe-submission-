@@ -1,0 +1,115 @@
+@model List<EventEnrolmentDto>
+@{
+    var ev = ViewBag.Event as EventDetailsDto;
+    ViewData["Title"] = "Enrolments — " + (ev?.EventName ?? "Event");
+    var confirmed = Model.Count(m => m.Status == "Confirmed");
+    var cancelled = Model.Count(m => m.Status == "Cancelled");
+}
+
+<div class="page-head">
+    <div>
+        <div class="eyebrow">Organiser &middot; @(ev?.EventName)</div>
+        <h1 class="mb-0">Enrolments</h1>
+        <p>
+            @(ev?.EventDate.ToString("dd MMM yyyy")) &middot; @(ev?.Location)
+            &middot; @Model.Count participant@(Model.Count == 1 ? "" : "s") listed
+        </p>
+    </div>
+    <div class="inline">
+        <a class="btn btn-light" href="/Organiser/Results/@(ev?.EventID)">Results entry</a>
+        <a class="btn btn-ghost" href="/Organiser/Events">← Back to events</a>
+    </div>
+</div>
+
+<div class="grid grid-3 mb-3">
+    <div class="stat">
+        <div class="icon">👥</div>
+        <div class="label">Total enrolments</div>
+        <div class="value">@Model.Count</div>
+        <div class="hint">All records</div>
+    </div>
+    <div class="stat teal">
+        <div class="icon">✓</div>
+        <div class="label">Confirmed</div>
+        <div class="value">@confirmed</div>
+        <div class="hint">Active entries</div>
+    </div>
+    <div class="stat rose">
+        <div class="icon">✕</div>
+        <div class="label">Cancelled</div>
+        <div class="value">@cancelled</div>
+        <div class="hint">Withdrawn entries</div>
+    </div>
+</div>
+
+@if (ViewBag.ApiError != null)
+{
+    <div class="alert alert-error"><span>!</span><span>@ViewBag.ApiError</span></div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="card">
+        <div class="empty">
+            <div class="emoji">👤</div>
+            <h3>No enrolments yet</h3>
+            <p>Participants will appear here as soon as they enter one of this event's categories.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <div class="table-scroll">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Participant</th>
+                        <th>Contact</th>
+                        <th>Category</th>
+                        <th>Enrolled on</th>
+                        <th>Status</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.OrderBy(x => x.ParticipantName))
+                    {
+                        <tr>
+                            <td><b>@m.ParticipantName</b><br /><small class="muted">#@m.ParticipantID</small></td>
+                            <td>
+                                <a href="mailto:@m.Email">@m.Email</a>
+                                @if (!string.IsNullOrWhiteSpace(m.PhoneNumber))
+                                {
+                                    <br /><small class="muted">@m.PhoneNumber</small>
+                                }
+                            </td>
+                            <td>
+                                @m.CategoryName<br />
+                                <span class="badge @(m.CategoryType == "Age" ? "badge-amber" : "badge-brand")">@m.CategoryType</span>
+                            </td>
+                            <td>@m.EnrolmentDate.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <span class="badge @(m.Status == "Confirmed" ? "badge-green" : m.Status == "Cancelled" ? "badge-rose" : "badge-amber")">@m.Status</span>
+                            </td>
+                            <td>
+                                @if (m.HasResult)
+                                {
+                                    <span class="badge badge-teal">@m.FinishTime &middot; @m.Position</span>
+                                    @if (m.IsPublished)
+                                    {
+                                        <span class="badge badge-green">Published</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="muted">Not captured</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

@@ -1,0 +1,143 @@
+@model List<EventDto>
+@{
+    ViewData["Title"] = "Upcoming events";
+    var enrolled = ViewBag.EnrolledEventIds as HashSet<int> ?? new HashSet<int>();
+    var types = ViewBag.Types as List<string> ?? new List<string>();
+    var locations = ViewBag.Locations as List<string> ?? new List<string>();
+    var isParticipant = Context.Session.GetString(SessionKeys.Role) == "Participant";
+    var isAuthed = !string.IsNullOrEmpty(Context.Session.GetString(SessionKeys.Token));
+}
+
+<section class="hero">
+    <span class="pill">🏃 @Model.Count event@(Model.Count == 1 ? "" : "s") ready to enter</span>
+    <h1>Find your next start line.</h1>
+    <p>
+        Discover road races, trail challenges and cycle tours across South Africa. Compare
+        categories, check the route and secure your spot in a few clicks.
+    </p>
+    <div class="hero-actions">
+        @if (!isAuthed)
+        {
+            <a class="btn btn-primary" href="/Account/Register">Create your free account</a>
+            <a class="btn btn-light" href="/Account/Login">Log in</a>
+        }
+        else if (isParticipant)
+        {
+            <a class="btn btn-primary" href="/Participant/MyEnrolments">View my enrolments</a>
+            <a class="btn btn-light" href="/Participant/MyResults">My results</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" href="/Organiser/Dashboard">Open organiser dashboard</a>
+        }
+    </div>
+</section>
+
+@if (ViewBag.ApiError != null)
+{
+    <div class="alert alert-error"><span>!</span><span>@ViewBag.ApiError</span></div>
+}
+
+<form method="get" asp-action="Index" class="filters">
+    <div class="field">
+        <label for="search">Search</label>
+        <input id="search" name="search" class="input" value="@ViewBag.Search" placeholder="Event name, town or keyword" />
+    </div>
+    <div class="field">
+        <label for="type">Event type</label>
+        <select id="type" name="type" class="select">
+            <option value="All">All types</option>
+            @foreach (var t in types)
+            {
+                <option value="@t" selected="@(ViewBag.Type == t)">@t</option>
+            }
+        </select>
+    </div>
+    <div class="field">
+        <label for="location">Location</label>
+        <select id="location" name="location" class="select">
+            <option value="All">All locations</option>
+            @foreach (var l in locations)
+            {
+                <option value="@l" selected="@(ViewBag.Location == l)">@l</option>
+            }
+        </select>
+    </div>
+    <label class="check">
+        <input type="checkbox" name="includePast" value="true" checked="@(ViewBag.IncludePast == true)" />
+        Include past events
+    </label>
+    <button type="submit" class="btn btn-dark">Apply filters</button>
+    <a class="btn btn-ghost" asp-action="Index">Reset</a>
+</form>
+
+<div class="page-head">
+    <div>
+        <div class="eyebrow">Event calendar</div>
+        <h2 class="mb-0">@(ViewBag.IncludePast == true ? "All events" : "Upcoming events")</h2>
+        <p>@Model.Count result@(Model.Count == 1 ? "" : "s") matching your filters.</p>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card">
+        <div class="empty">
+            <div class="emoji">🔍</div>
+            <h3>No events match those filters</h3>
+            <p>Try a broader search, a different type, or include past events.</p>
+            <a class="btn btn-primary" asp-action="Index">Show all upcoming events</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="grid grid-3">
+        @foreach (var e in Model)
+        {
+            var isEnrolled = enrolled.Contains(e.EventID);
+            <article class="card card-hover event-card">
+                <div class="event-banner">
+                    @if (!string.IsNullOrEmpty(e.BannerUrl))
+                    {
+                        <img src="@e.BannerUrl" alt="@e.EventName banner" />
+                    }
+                    else
+                    {
+                        <div class="fallback">🏅</div>
+                    }
+                    @if (!string.IsNullOrEmpty(e.EventType))
+                    {
+                        <span class="type-chip">@e.EventType</span>
+                    }
+                </div>
+                <div class="event-body">
+                    <h3>@e.EventName</h3>
+                    <div class="event-meta">
+                        <span>📅 @e.EventDate.ToString("ddd dd MMM yyyy")</span>
+                        <span>📍 @e.Location</span>
+                        <span>🏁 @e.DistanceKM.ToString("0.##") km</span>
+                    </div>
+                    <p class="muted" style="font-size:.85rem;">
+                        @(string.IsNullOrWhiteSpace(e.Description)
+                            ? "Full event details, categories and entry information available."
+                            : (e.Description!.Length > 110 ? e.Description.Substring(0, 110) + "…" : e.Description))
+                    </p>
+                    <div class="spacer"></div>
+                    <div class="event-foot">
+                        <span class="badge @(e.IsPast ? "badge-dark" : "badge-green")">
+                            @(e.IsPast ? "Completed" : "Open")
+                        </span>
+                        <span class="inline" style="gap:8px;">
+                            @if (isEnrolled)
+                            {
+                                <span class="badge badge-brand">Enrolled</span>
+                            }
+                            <a class="btn btn-primary btn-sm" asp-action="Details" asp-route-id="@e.EventID">View event</a>
+                        </span>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}

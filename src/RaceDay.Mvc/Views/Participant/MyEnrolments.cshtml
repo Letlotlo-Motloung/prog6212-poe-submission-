@@ -1,0 +1,129 @@
+@model List<MyEnrolmentDto>
+@{
+    ViewData["Title"] = "My enrolments";
+    var upcoming = Model.Where(m => m.EventDate >= DateTime.Today && m.Status != "Cancelled").OrderBy(m => m.EventDate).ToList();
+    var history = Model.Where(m => m.EventDate < DateTime.Today || m.Status == "Cancelled").OrderByDescending(m => m.EventDate).ToList();
+}
+
+<div class="page-head">
+    <div>
+        <div class="eyebrow">Participant</div>
+        <h1 class="mb-0">My enrolments</h1>
+        <p>Every event you have entered, with the category and current enrolment status.</p>
+    </div>
+    <a class="btn btn-primary" href="/Home/Index">Find another event</a>
+</div>
+
+@if (ViewBag.ApiError != null)
+{
+    <div class="alert alert-error"><span>!</span><span>@ViewBag.ApiError</span></div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="card">
+        <div class="empty">
+            <div class="emoji">🎽</div>
+            <h3>You have not entered an event yet</h3>
+            <p>Browse the event calendar, open an event and choose a category to enrol.</p>
+            <a class="btn btn-primary" href="/Home/Index">Browse events</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="section-title" style="margin-top:0;">
+        <h2 class="mb-0">Upcoming entries</h2>
+        <span class="badge badge-brand">@upcoming.Count</span>
+    </div>
+
+    @if (upcoming.Count == 0)
+    {
+        <div class="card card-pad">
+            <p class="muted mb-0">No upcoming entries right now. Your completed and cancelled entries appear below.</p>
+        </div>
+    }
+    else
+    {
+        <div class="stack">
+            @foreach (var m in upcoming)
+            {
+                <div class="card card-pad" style="display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap;">
+                    <div>
+                        <div class="inline" style="margin-bottom:6px;">
+                            <span class="badge @(m.Status == "Confirmed" ? "badge-green" : "badge-amber")">@m.Status</span>
+                            <span class="badge badge-brand">@m.CategoryName</span>
+                            <span class="badge badge-dark">@m.CategoryType</span>
+                        </div>
+                        <h3 class="mb-0">@m.EventName</h3>
+                        <div class="event-meta mb-0">
+                            <span>📅 @m.EventDate.ToString("ddd dd MMM yyyy")</span>
+                            <span>📍 @m.Location</span>
+                            <span>🗓️ Entered @m.EnrolmentDate.ToString("dd MMM yyyy")</span>
+                        </div>
+                    </div>
+                    <div class="inline">
+                        <a class="btn btn-light btn-sm" href="/Home/Details/@m.EventID">Event details</a>
+                        <form asp-action="CancelEnrolment" method="post" class="mb-0" data-confirm="Cancel your enrolment for @m.EventName?">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="enrolmentId" value="@m.EnrolmentID" />
+                            <button type="submit" class="btn btn-danger btn-sm">Cancel entry</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="section-title">
+        <h2 class="mb-0">Past &amp; cancelled entries</h2>
+        <span class="badge badge-dark">@history.Count</span>
+    </div>
+
+    <div class="table-wrap">
+        <div class="table-scroll">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Result</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (history.Count == 0)
+                    {
+                        <tr><td colspan="6" class="muted">Nothing here yet.</td></tr>
+                    }
+                    @foreach (var m in history)
+                    {
+                        <tr>
+                            <td><b>@m.EventName</b><br /><small>@m.Location</small></td>
+                            <td>@m.EventDate.ToString("dd MMM yyyy")</td>
+                            <td>@m.CategoryName <span class="badge badge-dark">@m.CategoryType</span></td>
+                            <td>
+                                <span class="badge @(m.Status == "Cancelled" ? "badge-rose" : m.Status == "Confirmed" ? "badge-green" : "badge-amber")">@m.Status</span>
+                            </td>
+                            <td>
+                                @if (m.HasResult)
+                                {
+                                    <a class="badge badge-teal" href="/Participant/MyResults">View result</a>
+                                }
+                                else
+                                {
+                                    <span class="muted">—</span>
+                                }
+                            </td>
+                            <td class="right">
+                                <a class="btn btn-ghost btn-sm" href="/Home/Details/@m.EventID">Details</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

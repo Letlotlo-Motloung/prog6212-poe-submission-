@@ -1,0 +1,56 @@
+@model LoginDto
+@{
+    ViewData["Title"] = "Log in";
+}
+
+<div class="auth-wrap">
+    <aside class="auth-side">
+        <h2>Welcome back to RaceDay.</h2>
+        <p>One account. Every race, every result, every finish line.</p>
+        <ul>
+            <li><span>✓</span> Browse and filter upcoming events</li>
+            <li><span>✓</span> Enrol in the category that suits you</li>
+            <li><span>✓</span> Track your personal race history</li>
+            <li><span>✓</span> Organisers manage events, categories and results</li>
+        </ul>
+    </aside>
+
+    <section class="auth-form">
+        <h1>Log in</h1>
+        <p class="sub">Use the email address and password linked to your RaceDay account.</p>
+
+        <form asp-action="Login" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+            <div class="field">
+                <label asp-for="Email">Email address</label>
+                <input asp-for="Email" class="input" type="email" autocomplete="username" placeholder="you@example.com" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Password">Password</label>
+                <input asp-for="Password" class="input" type="password" autocomplete="current-password" placeholder="••••••••" />
+                <span asp-validation-for="Password" class="field-error"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </form>
+
+        <p class="auth-switch">New to RaceDay? <a asp-action="Register">Create an account</a></p>
+
+        <div class="divider"></div>
+        <p class="mb-0" style="font-size:.78rem;color:var(--muted);">
+            <b>Demo accounts</b><br />
+            Organiser: thandiwe.mokoena@gmail.co.za / Password123!<br />
+            Participant: lindiwe.dlamini@gmail.com / Password123!
+        </p>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

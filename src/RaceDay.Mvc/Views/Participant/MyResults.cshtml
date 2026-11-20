@@ -1,0 +1,94 @@
+@model List<MyResultDto>
+@{
+    ViewData["Title"] = "My results";
+    var best = Model.Where(r => r.Position.HasValue).OrderBy(r => r.Position).FirstOrDefault();
+}
+
+<div class="page-head">
+    <div>
+        <div class="eyebrow">Participant</div>
+        <h1 class="mb-0">My results</h1>
+        <p>Your personal race history across every completed event, published by the organiser.</p>
+    </div>
+    <a class="btn btn-light" href="/Participant/MyEnrolments">My enrolments</a>
+</div>
+
+@if (ViewBag.ApiError != null)
+{
+    <div class="alert alert-error"><span>!</span><span>@ViewBag.ApiError</span></div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="card">
+        <div class="empty">
+            <div class="emoji">🏅</div>
+            <h3>No published results yet</h3>
+            <p>Results appear here once an organiser captures your finish time and publishes the event results.</p>
+            <a class="btn btn-primary" href="/Home/Index">Browse events</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="grid grid-3 mb-3">
+        <div class="stat">
+            <div class="icon">🏁</div>
+            <div class="label">Races completed</div>
+            <div class="value">@Model.Count</div>
+            <div class="hint">Published results</div>
+        </div>
+        <div class="stat teal">
+            <div class="icon">⚡</div>
+            <div class="label">Best finish</div>
+            <div class="value" style="font-size:1.5rem;">@(best?.FinishTime ?? "—")</div>
+            <div class="hint">@(best?.EventName ?? "No timed result yet")</div>
+        </div>
+        <div class="stat amber">
+            <div class="icon">🥇</div>
+            <div class="label">Best position</div>
+            <div class="value">@(best?.Position?.ToString() ?? "—")</div>
+            <div class="hint">@(best != null ? $"of {best.TotalFinishers} finishers" : "—")</div>
+        </div>
+    </div>
+
+    <div class="stack">
+        @foreach (var r in Model.OrderByDescending(x => x.EventDate))
+        {
+            var medalClass = r.Position == 1 ? "gold" : r.Position == 2 ? "silver" : r.Position == 3 ? "bronze" : "";
+            var suffix = r.Position.HasValue ? Ordinal(r.Position.Value) : "—";
+            <div class="card result-card">
+                <div class="result-medal @medalClass">@suffix</div>
+                <div>
+                    <h3 class="mb-0">@r.EventName</h3>
+                    <div class="event-meta mb-0">
+                        <span>📅 @r.EventDate.ToString("dd MMM yyyy")</span>
+                        <span>📍 @r.Location</span>
+                        <span>🎽 @r.CategoryName</span>
+                    </div>
+                </div>
+                <div class="right">
+                    <div class="result-time">@(r.FinishTime ?? "—")</div>
+                    <div class="muted" style="font-size:.8rem;">
+                        @if (r.Position.HasValue)
+                        {
+                            <span>@suffix out of @r.TotalFinishers finishers</span>
+                        }
+                        else
+                        {
+                            <span>@r.Status</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    static string Ordinal(int n)
+    {
+        if (n % 100 is >= 11 and <= 13) return n + "th";
+        return (n % 10) switch { 1 => n + "st", 2 => n + "nd", 3 => n + "rd", _ => n + "th" };
+    }
+}

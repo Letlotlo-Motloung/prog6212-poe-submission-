@@ -1,0 +1,172 @@
+@model EventDetailsDto
+@{
+    ViewData["Title"] = Model.EventName;
+    var enrolledCategoryIds = ViewBag.EnrolledCategoryIds as HashSet<int> ?? new HashSet<int>();
+    var enrolledEvent = ViewBag.EnrolledEvent == true;
+    var role = Context.Session.GetString(SessionKeys.Role) ?? "";
+    var isAuthed = !string.IsNullOrEmpty(Context.Session.GetString(SessionKeys.Token));
+    var isParticipant = role == "Participant";
+    var totalCapacity = Model.Categories.Sum(c => c.MaxParticipants);
+}
+
+<a class="btn btn-ghost btn-sm mb-3" href="/Home/Index">← Back to events</a>
+
+<section class="detail-hero">
+    @if (!string.IsNullOrEmpty(Model.BannerUrl))
+    {
+        <img src="@Model.BannerUrl" alt="@Model.EventName banner" />
+    }
+    <div class="overlay"></div>
+    <div class="content">
+        <div class="inline" style="margin-bottom:10px;">
+            @if (!string.IsNullOrEmpty(Model.EventType))
+            {
+                <span class="badge badge-brand">@Model.EventType</span>
+            }
+            <span class="badge @(Model.IsPast ? "badge-dark" : "badge-green")">@(Model.IsPast ? "Completed" : "Open for entries")</span>
+            @if (enrolledEvent)
+            {
+                <span class="badge badge-teal">You are enrolled</span>
+            }
+        </div>
+        <h1>@Model.EventName</h1>
+        <div class="meta">
+            <span>📅 @Model.EventDate.ToString("dddd dd MMMM yyyy")</span>
+            <span>📍 @Model.Location</span>
+            <span>🏁 @Model.DistanceKM.ToString("0.##") km</span>
+            <span>👥 @Model.TotalEnrolments enrolled</span>
+        </div>
+    </div>
+</section>
+
+<div class="detail-grid">
+    <div class="stack">
+        <div class="card card-pad">
+            <h2>About this event</h2>
+            <p class="muted">
+                @(string.IsNullOrWhiteSpace(Model.Description)
+                    ? "The organiser has not added a full description yet. Check the categories below for entry options."
+                    : Model.Description)
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.RouteInfo))
+            {
+                <div class="divider"></div>
+                <h3>Route information</h3>
+                <p class="muted mb-0">@Model.RouteInfo</p>
+            }
+        </div>
+
+        <div class="card card-pad">
+            <div class="section-title" style="margin-top:0;">
+                <h2 class="mb-0">Categories</h2>
+                <span class="badge badge-dark">@Model.Categories.Count categor@(Model.Categories.Count == 1 ? "y" : "ies")</span>
+            </div>
+
+            @if (Model.Categories.Count == 0)
+            {
+                <div class="empty" style="padding:34px 10px;">
+                    <div class="emoji">🗂️</div>
+                    <h3>No categories yet</h3>
+                    <p>The organiser is still finalising entry categories for this event.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var c in Model.Categories)
+                {
+                    var pct = c.MaxParticipants > 0 ? Math.Min(100, (int)Math.Round(c.EnrolmentCount * 100.0 / c.MaxParticipants)) : 0;
+                    var alreadyIn = enrolledCategoryIds.Contains(c.CategoryID);
+                    <div class="cat-row">
+                        <div style="flex:1;">
+                            <div class="name">
+                                @c.CategoryName
+                                <span class="badge @(c.CategoryType == "Age" ? "badge-amber" : "badge-brand")" style="margin-left:6px;">@c.CategoryType</span>
+                            </div>
+                            <div class="sub">
+                                @c.DistanceKM.ToString("0.##") km &middot;
+                                @c.EnrolmentCount / @c.MaxParticipants places taken &middot;
+                                R @c.EntryFee.ToString("0.00")
+                            </div>
+                            <div class="progress"><span style="width:@pct%"></span></div>
+                        </div>
+                        <div class="right" style="min-width:150px;">
+                            @if (c.IsFull)
+                            {
+                                <span class="badge badge-rose">Full</span>
+                            }
+                            else if (alreadyIn)
+                            {
+                                <span class="badge badge-teal">✓ Enrolled</span>
+                            }
+                            else if (!isAuthed)
+                            {
+                                <a class="btn btn-primary btn-sm" href="/Account/Login?returnUrl=/Home/Details/@Model.EventID">Log in to enter</a>
+                            }
+                            else if (!isParticipant)
+                            {
+                                <span class="badge badge-dark">Participants only</span>
+                            }
+                            else if (Model.IsPast)
+                            {
+                                <span class="badge badge-dark">Event closed</span>
+                            }
+                            else if (enrolledEvent)
+                            {
+                                <span class="badge badge-dark">Already entered</span>
+                            }
+                            else
+                            {
+                                <form asp-action="Enrol" method="post" class="mb-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="categoryId" value="@c.CategoryID" />
+                                    <input type="hidden" name="eventId" value="@Model.EventID" />
+                                    <button type="submit" class="btn btn-primary btn-sm">Enrol now</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <aside class="stack">
+        <div class="card card-pad">
+            <h3>Event details</h3>
+            <div class="info-list">
+                <div class="row"><span>Date</span><span>@Model.EventDate.ToString("dd MMM yyyy")</span></div>
+                <div class="row"><span>Location</span><span>@Model.Location</span></div>
+                <div class="row"><span>Distance</span><span>@Model.DistanceKM.ToString("0.##") km</span></div>
+                <div class="row"><span>Type</span><span>@(Model.EventType ?? "—")</span></div>
+                <div class="row"><span>Organiser</span><span>@(Model.OrganiserName ?? "RaceDay")</span></div>
+                <div class="row"><span>Enrolments</span><span>@Model.TotalEnrolments</span></div>
+                <div class="row"><span>Total capacity</span><span>@totalCapacity</span></div>
+            </div>
+        </div>
+
+        @if (isParticipant)
+        {
+            <div class="card card-pad">
+                <h3>Your entry</h3>
+                @if (enrolledEvent)
+                {
+                    <p class="muted" style="font-size:.88rem;">You are enrolled in this event. Manage your entry or cancel it from your enrolments page.</p>
+                    <a class="btn btn-light btn-block" href="/Participant/MyEnrolments">Manage my enrolments</a>
+                }
+                else
+                {
+                    <p class="muted" style="font-size:.88rem;">Pick a category above to secure your place. Your enrolment is recorded immediately.</p>
+                }
+            </div>
+        }
+        else if (!isAuthed)
+        {
+            <div class="card card-pad">
+                <h3>Ready to race?</h3>
+                <p class="muted" style="font-size:.88rem;">Create a free participant account to enrol in this event and track your results.</p>
+                <a class="btn btn-primary btn-block" href="/Account/Register">Create account</a>
+            </div>
+        }
+    </aside>
+</div>
