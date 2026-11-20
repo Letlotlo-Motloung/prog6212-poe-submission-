@@ -1,38 +1,23 @@
-# Start the whole solution with:  docker compose up --build
 services:
   api:
     build:
       context: .
       dockerfile: src/RaceDay.Api/Dockerfile
-    image: raceday-api
     ports:
-      - "5088:8080"            # API + Swagger: http://localhost:5088/swagger
-    volumes:
-      - raceday-data:/data     # SQLite database
-    healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
-    restart: unless-stopped
+      - "5088:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
 
   mvc:
     build:
       context: .
       dockerfile: src/RaceDay.Mvc/Dockerfile
-    image: raceday-mvc
     ports:
-      - "5090:8080"            # Web site: http://localhost:5090
+      - "5090:8080"
     environment:
-      ApiBaseUrl: http://api:8080/
-    volumes:
-      - raceday-uploads:/app/wwwroot/uploads   # uploaded profile/event images
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Update this to match how your MVC app reads the API URL. 
+      # 'http://api:8080' uses Docker's internal network.
+      - ApiSettings__BaseUrl=http://api:8080/ 
     depends_on:
-      api:
-        condition: service_healthy
-    restart: unless-stopped
-
-volumes:
-  raceday-data:
-  raceday-uploads:
+      - api
