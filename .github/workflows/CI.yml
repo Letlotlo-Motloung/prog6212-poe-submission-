@@ -30,7 +30,6 @@ jobs:
       - name: Build
         run: dotnet build RaceDay.sln -c Release --no-restore
 
-      # No test projects exist yet. Once you add one, this step will run it.
       - name: Test
         run: dotnet test RaceDay.sln -c Release --no-build --verbosity normal
 
