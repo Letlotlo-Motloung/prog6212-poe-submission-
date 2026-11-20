@@ -60,6 +60,35 @@ The MVC app reads the API address from `src/RaceDay.Mvc/appsettings.json`:
 
 The SQLite database (`raceday.db`) is created and seeded automatically on first API start.
 
+Docker
+Docker (Single Command)
+The easiest way to run the full stack (API and MVC front-end) is using Docker Compose. This builds the images and starts both containers in a shared network.
+
+Ensure Docker Desktop is running.
+
+From the root directory (where docker-compose.yml is located), run this single command:
+
+bash
+docker compose up --build
+
+MVC Application: Accessible at http://localhost:5090
+API Application: Accessible at http://localhost:5088
+
+
+Alternative: Standard Docker Run Commands
+If you prefer to build and run the containers manually via the command line:
+
+bash
+# 1. Build the images
+docker build -t raceday-api -f src/RaceDay.Api/Dockerfile .
+docker build -t raceday-mvc -f src/RaceDay.Mvc/Dockerfile .
+
+# 2. Run the API container
+docker run -d -p 5088:8080 --name raceday-api-container raceday-api
+
+# 3. Run the MVC container (linking it to the API)
+docker run -d -p 5090:8080 --name raceday-mvc-container -e ApiSettings__BaseUrl="http://host.docker.internal:5088/" raceday-mvc
+
 ---
 
 ## 3. Demo accounts
