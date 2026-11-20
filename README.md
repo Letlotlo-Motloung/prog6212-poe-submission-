@@ -60,7 +60,8 @@ The MVC app reads the API address from `src/RaceDay.Mvc/appsettings.json`:
 
 The SQLite database (`raceday.db`) is created and seeded automatically on first API start.
 
-Docker
+**Docker**
+
 Docker (Single Command)
 The easiest way to run the full stack (API and MVC front-end) is using Docker Compose. This builds the images and starts both containers in a shared network.
 
